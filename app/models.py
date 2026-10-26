@@ -3,7 +3,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 db = SQLAlchemy()
 
-class Product(db.Model):
+class Producto(db.Model):
     __tablename__ = "productos"
 
     id: Mapped[int] = mapped_column(primary_key=True)
