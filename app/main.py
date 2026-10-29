@@ -1,8 +1,18 @@
-from flask import Flask, redirect, render_template, url_for
+from flask import (
+    Flask,
+    redirect,
+    render_template,
+    url_for,
+    request,
+    make_response,
+    session,
+    flash,
+)
 from app.models import db, Producto
 from app.forms import ProductoForm
 import os
 from werkzeug.utils import secure_filename
+from datetime import timedelta
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "Jwolfenwasher3."
@@ -14,6 +24,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["UPLOAD_FOLDER"] = os.path.join("app", "static", "img", "uploads")
 app.config["MAX_CONTENT_LENGTH"] = 2 * 1024 * 1024
 
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(days=2)
 db.init_app(app)
 
 with app.app_context():
@@ -37,7 +48,10 @@ def home():
 @app.route("/catalogo")
 def mostrar_catalogo():
     productos = Producto.query.all()
-    return render_template("catalogo.html", lista_productos=productos)
+    ultimo = request.cookies.get("ultimo_visto")
+    return render_template(
+        "catalogo.html", lista_productos=productos, ultimo_visto=ultimo
+    )
 
 
 # 2. CREATE: Mostrar formulario y guardar un nuevo producto en la BD
@@ -71,7 +85,9 @@ def crear_producto():
         # Llega con GET
         return redirect(url_for("mostrar_catalogo"))
 
-    return render_template("producto_form.html", form=form, titulo="Nuevo Producto", producto=None)
+    return render_template(
+        "producto_form.html", form=form, titulo="Nuevo Producto", producto=None
+    )
 
 
 # 3. UPDATE: Recuperar un producto existente, rellenar el formulario y guardar cambios
@@ -101,7 +117,7 @@ def editar_producto(prod_id):
 
             archivo.save(os.path.join(app.config["UPLOAD_FOLDER"], nombre_imagen))
         # Modificamos directamente los atributos del objeto recuperado de la BD
-        #Eliminar el archivo anterior
+        # Eliminar el archivo anterior
 
         if producto.imagen and producto.imagen != nombre_imagen:
             ruta_antigua = os.path.join(app.config["UPLOAD_FOLDER"], producto.imagen)
@@ -113,7 +129,9 @@ def editar_producto(prod_id):
         db.session.commit()
         return redirect(url_for("mostrar_catalogo"))
 
-    return render_template("producto_form.html", form=form, titulo="Editar Producto", producto=producto)
+    return render_template(
+        "producto_form.html", form=form, titulo="Editar Producto", producto=producto
+    )
 
 
 # 4. DELETE: Eliminar un producto de la BD (exclusivamente por POST)
@@ -124,6 +142,33 @@ def eliminar_producto(prod_id):
     db.session.commit()
     return redirect(url_for("mostrar_catalogo"))
 
+
+@app.route("/producto/<int:prod_id>")
+def ver_producto(prod_id):
+    producto = db.get_or_404(Producto, prod_id)
+    respuesta = make_response(
+        render_template("producto_detalle.html", producto=producto)
+    )
+    # Creamos la cookie
+
+    respuesta.set_cookie(
+        "ultimo_visto",
+        value=producto.nombre,
+        max_age=60 * 60 * 24 * 7,
+        httponly=True,
+        samesite="Lax",
+    )
+    return respuesta
+
+@app.route("/carrito/anadir/<int:prod_id>", methods=["POST"])
+def anadir_al_carrito(prod_id):
+    session.permanent = True
+    if "carrito" not in session:
+        session["carrito"] = []
+    session["carrito"].append(prod_id)
+    session.modified = True
+    flash("Añadido el producto al carrito", "exito")
+    return redirect(url_for("mostrar_catalogo"))
 
 if __name__ == "__main__":
     app.run(debug=True)

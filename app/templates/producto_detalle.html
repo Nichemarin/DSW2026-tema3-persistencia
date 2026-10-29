@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}detalles de {{producto.nombre}} {% endblock %}
+
+{% block content %}
+<h1>{{producto.nombre}}</h1>
+<h2>{{producto.precio}}</h2>
+{% if producto.imagen %}
+<img src="{{ url_for('static', filename='img/uploads/' + producto.imagen) }}" alt="{{ producto.nombre }}" height="100px" width="100px"/>
+{% endif %}
+{% endblock %}
