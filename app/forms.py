@@ -19,7 +19,7 @@ class ProductoForm(FlaskForm):
         ],
     )
     disponible = BooleanField("Disponible en stock", default=True)
-    imagen = FileField(
+    archivo_imagen = FileField(
         "Imagen del producto",
         validators=[
             FileAllowed(["jpg", "png", "jpeg"],
