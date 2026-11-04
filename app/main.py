@@ -13,10 +13,15 @@ from app.forms import ProductoForm
 import os
 from werkzeug.utils import secure_filename
 from datetime import timedelta
+from flask_debugtoolbar import DebugToolbarExtension
 
 app = Flask(__name__)
+
+app.debug = True
+
 app.config["SECRET_KEY"] = "Jwolfenwasher3."
 
+toolbar = DebugToolbarExtension(app)
 # Configuración de la base de datos SQLite local
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///tienda.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -160,6 +165,7 @@ def ver_producto(prod_id):
     )
     return respuesta
 
+
 @app.route("/carrito/anadir/<int:prod_id>", methods=["POST"])
 def anadir_al_carrito(prod_id):
     session.permanent = True
@@ -170,5 +176,24 @@ def anadir_al_carrito(prod_id):
     flash("Añadido el producto al carrito", "exito")
     return redirect(url_for("mostrar_catalogo"))
 
+@app.route("/carrito")
+def ver_carrito():
+    ids_carrito = session.get("carrito", [])
+    # Consultamos en la base de datos los productos cuyos IDs estén en la lista
+    if ids_carrito:
+        productos_carrito = Producto.query.filter(Producto.id.in_(ids_carrito)).all()
+    else:
+        productos_carrito = []
+        
+    return render_template("carrito.html", productos=productos_carrito)
+
+# 3. Vaciar el carrito (vía POST)
+@app.route("/carrito/vaciar", methods=["POST"])
+def vaciar_carrito():
+    # Eliminamos únicamente la clave 'carrito' de la sesión
+    session.pop("carrito", None)
+    flash("Has vaciado tu carrito de la compra.", "info")
+    return redirect(url_for("mostrar_catalogo"))
+    
 if __name__ == "__main__":
     app.run(debug=True)

@@ -1,0 +1,18 @@
+body{
+    background-color: aliceblue;
+}
+
+.message {
+    box-shadow: 2px 2px 2px gray;
+    padding:  2px 5px;
+}
+
+.message.exito{
+    background-color: lightgreen;
+    color: green;
+}
+
+.message.error{
+    background-color: lightcoral;
+    color: rgb(63, 1, 1);
+}
