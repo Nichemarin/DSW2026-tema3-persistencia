@@ -5,37 +5,44 @@
 {% block content %}
 <h1>Catálogo de Productos</h1>
 <h3>Ultimo producto visto: {{ultimo_visto}}</h3>
-<p><a href="{{ url_for('crear_producto') }}">➕ Añadir nuevo producto</a></p>
 
+{% if current_user.is_authenticated and current_user.es_admin %}
+<p><a href="{{ url_for('crear_producto') }}">+ Añadir nuevo producto</a></p>
+{% endif %}
 <ul>
     {% for prod in lista_productos %}
     <li style="margin-bottom: 12px;">
         {% if prod.imagen %}
-        <img src="{{ url_for('static', filename='img/uploads/' + prod.imagen) }}" alt="{{ prod.nombre }}" width="100px" height="100px">
+        <img src="{{ url_for('static', filename='img/uploads/' + prod.imagen) }}" alt="{{ prod.nombre }}" width="100px"
+            height="100px">
         {% else %}
         <span style="color: gray;">(No imagen)</span>
         {% endif %}
         <a href="{{ url_for('ver_producto', prod_id=prod.id)}}">
-        <strong>{{ prod.nombre }}</strong> - {{ prod.precio }} €
+            <strong>{{ prod.nombre }}</strong> - {{ prod.precio }} €
         </a>
         {% if prod.disponible %}
-            <span style="color: green;">(En stock)</span>
-            <form method="post" action=" {{ url_for('anadir_al_carrito', prod_id = prod.id)}}">
-                <button type = "submit">Añadir al carrito</button>
-            </form>
+        <span style="color: green;">(En stock)</span>
+        {% if current_user.is_authenticated %}
+        <form method="post" action=" {{ url_for('anadir_al_carrito', prod_id = prod.id)}}">
+            <button type="submit">Añadir al carrito</button>
+        </form>
+        {% endif %}
         {% else %}
-            <span style="color: red;">(Agotado)</span>
+        <span style="color: red;">(Agotado)</span>
         {% endif %}
 
         <!-- Enlace GET para ir al formulario de edición -->
+        {% if current_user.is_authenticated and current_user.es_admin %}
         | <a href="{{ url_for('editar_producto', prod_id=prod.id) }}">Editar</a>
-
         <!-- Formulario POST para eliminar el registro de forma segura -->
-        <form action="{{ url_for('eliminar_producto', prod_id=prod.id) }}" method="post" style="display:inline; margin-left: 5px;">
-            <button type="submit" onclick="return confirm('¿Seguro que deseas eliminar {{ prod.nombre }}?');">
-                Eliminar
-            </button>
-        </form>
+        <form action="{{ url_for('eliminar_producto', prod_id=prod.id) }}" method="post"
+        style="display:inline; margin-left: 5px;">
+        <button type="submit" onclick="return confirm('¿Seguro que deseas eliminar {{ prod.nombre }}?');">
+            Eliminar
+        </button>
+    </form>
+    {% endif %}
     </li>
     {% else %}
     <li>No hay productos en la base de datos.</li>
